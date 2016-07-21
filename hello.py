@@ -50,6 +50,7 @@ class ButtonB(Input):
 
 
 def program(func):
+    """Registering decorator for programs"""
     STATE.programs.append(func)
 
     def wrapper(*args, **kwargs):
@@ -68,15 +69,6 @@ def program(func):
         pass
 
     return wrapper
-
-
-def handle(event, *args, **kwargs):
-    handler = getattr(HANDLERS, event)
-
-    if handler is not None:
-        print('Executing handler {!r}(*{!r}, **{!r}) for {!r}'.format(
-            handler, args, kwargs, event))
-        return handler(*args, **kwargs)
 
 
 def check_input():
@@ -158,7 +150,12 @@ while True:
         next(STATE.active)
     except Input as exc:
         print('Input: {!r}'.format(exc))
-        handle(exc.name)
+        handler = getattr(HANDLERS, exc.name)
+
+        if handler is not None:
+            print('Executing handler {!r}({!r}) for {!r}'.format(
+                handler, exc, exc.name))
+            handler(exc)
     except StopIteration:
         print('{!r} stopped'.format(STATE.active))
         STATE.active = None
