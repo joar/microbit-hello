@@ -1,5 +1,4 @@
 from microbit import *
-TASKS = []
 
 
 def debug(text):
