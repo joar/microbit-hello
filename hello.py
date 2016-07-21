@@ -1,6 +1,7 @@
 import microbit
 
 
+# TODO: Use namedtuples
 class State:
     def __init__(self, programs=None):
         self.programs = programs or []
@@ -28,6 +29,7 @@ class Handlers:
         self.button_a = button_a
         self.button_b = button_b
         self.interrupt = interrupt
+
 
 DEFAULT_HANDLERS = Handlers(button_a=lambda: STATE.start_next())
 
@@ -67,6 +69,7 @@ def program(func):
 
     return wrapper
 
+
 def handle(event, *args, **kwargs):
     handler = getattr(HANDLERS, event)
 
@@ -87,8 +90,11 @@ def check_input():
         raise ButtonB
 
 
-def sleep(self, millis):
-    microbit.sleep(millis)
+def sleep(millis):
+    t = microbit.running_time()
+    while microbit.running_time() < t + millis:
+        check_input()
+        yield
 
 
 def render_clocks(self):
@@ -110,7 +116,7 @@ def draw_gradient1():
                 value = round(relative_pos * max_value)
                 microbit.display.set_pixel(x, y, value)
 
-        yield 100
+        yield from sleep(100)
         offset += 1
         offset %= max_index
 
@@ -130,9 +136,16 @@ def draw_gradient2():
                 value = round(relative_pos * max_value)
                 microbit.display.set_pixel(x, y, value)
 
-        yield 100
+        yield from sleep(100)
         offset += 1
         offset %= max_index
+
+
+@program
+def long_running():
+    while True:
+        microbit.display.scroll('Hello', wait=False)
+        yield from sleep(1000 * 1000)
 
 
 print(STATE)
@@ -142,10 +155,7 @@ while True:
         STATE.start_next()
 
     try:
-        millis = next(STATE.active)
-        check_input()
-        microbit.sleep(millis)
-        check_input()
+        next(STATE.active)
     except Input as exc:
         print('Input: {!r}'.format(exc))
         handle(exc.name)
